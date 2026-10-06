@@ -2,7 +2,7 @@ import type { Grid } from '../engine/grid';
 import { clamp, smoothstep } from '../engine/math';
 import { hash2, type Rng } from '../engine/rng';
 import type { SceneDef } from '../engine/types';
-import { cp, lineGlyph, Motes } from './kit';
+import { cp, drawJelly, lineGlyph, Motes, swimJelly, type Jelly } from './kit';
 
 type RGB = [number, number, number];
 const GLOWS: RGB[] = [
@@ -16,7 +16,6 @@ const GLOWS: RGB[] = [
 interface CoralCell { x: number; y: number; g: number; along: number; tip: boolean }
 interface Coral { cells: CoralCell[]; color: RGB; phase: number; speed: number }
 interface Anemone { x: number; y: number; n: number; len: number; color: RGB; phase: number }
-interface Jelly { x: number; y: number; size: number; phase: number; period: number; color: RGB; drift: number }
 interface School { x: number; y: number; dir: number; speed: number; count: number; seed: number; color: RGB }
 interface Grass { x: number; h: number; phase: number }
 
@@ -114,7 +113,7 @@ const reef: SceneDef = {
         jellies = [];
         for (let k = 0; k < 3; k++) {
           jellies.push({
-            x: rng() * cols, y: rows * rng.range(0.15, 0.6), size: rng.range(1.5, Math.max(2, rows * 0.045)),
+            kind: 'bell', x: rng() * cols, y: rows * rng.range(0.15, 0.6), size: rng.range(1.5, Math.max(2, rows * 0.045)),
             phase: rng() * 5, period: rng.range(3, 5), color: rng.pick(GLOWS), drift: rng.range(-0.6, 0.6),
           });
         }
@@ -134,13 +133,7 @@ const reef: SceneDef = {
         jellyKick = Math.max(jellyKick * Math.exp(-dt * 2), audio.bands[0]);
         const life = ctx.params.life;
         for (const j of jellies) {
-          j.phase += dt * (1 + jellyKick * 0.5);
-          // a jellyfish rises on each contraction and sinks gently in between
-          const p = (j.phase % j.period) / j.period;
-          const thrust = p < 0.25 ? Math.sin((p / 0.25) * Math.PI) : 0;
-          j.y -= thrust * dt * 2.2 * j.size * 0.6;
-          j.y += dt * 0.25;
-          j.x += (j.drift + Math.sin(t * 0.1 + j.period) * 0.3 * cur) * dt;
+          const thrust = swimJelly(j, dt, { kick: jellyKick, current: cur, t });
           if (j.y < -j.size * 3) j.y = rows * 0.75;
           if (j.y > rows * 0.8) j.y = rows * 0.8;
           if (j.x < -6) j.x += cols + 12;
@@ -260,37 +253,6 @@ const reef: SceneDef = {
     };
   },
 };
-
-function drawJelly(grid: Grid, j: Jelly, t: number, aspect: number, glow: number) {
-  const p = (j.phase % j.period) / j.period;
-  const squeeze = p < 0.25 ? Math.sin((p / 0.25) * Math.PI) : 0; // bell contraction
-  const R = j.size * (1 - 0.25 * squeeze);
-  const H = j.size * (0.8 + 0.3 * squeeze);
-  const rx = R / aspect;
-  const col = j.color;
-  for (let yy = -Math.ceil(H); yy <= 0; yy++) {
-    for (let xx = -Math.ceil(rx); xx <= Math.ceil(rx); xx++) {
-      const d = Math.hypot((xx * aspect) / R, yy / H);
-      if (d > 1) continue;
-      const rim = d > 0.75 || yy === 0;
-      const b = clamp((rim ? 0.45 + 0.3 * squeeze : 0.16 + 0.1 * Math.sin(xx * 1.5 + t)) * glow);
-      grid.max(j.x + xx, j.y + yy, b, col[0], col[1], col[2], rim ? cp(yy === 0 ? '~' : xx < 0 ? '(' : xx > 0 ? ')' : '-') : 0);
-    }
-  }
-  // tentacles trail and ripple behind the bell, swinging wider toward their tips
-  const nT = 3;
-  for (let k = 0; k < nT; k++) {
-    let x = j.x + (k - (nT - 1) / 2) * rx * 0.7;
-    const len = j.size * (2.6 + k * 0.5);
-    for (let s = 1; s < len; s++) {
-      const f = s / len;
-      const nx = x + Math.sin(t * 1.3 + k * 2 + s * 0.5 + j.phase) * (0.2 + 0.5 * f);
-      if (hash2(k, s, 3) < 0.15 * f) { x = nx; continue; } // thin, broken toward the end
-      grid.max(nx, j.y + s, clamp((0.24 - f * 0.18) * glow), col[0], col[1], col[2], lineGlyph(nx - x, 1, aspect));
-      x = nx;
-    }
-  }
-}
 
 /** A manta ray: a broad dark diamond whose wings beat slowly, outlined by stirred-up plankton. */
 function drawManta(grid: Grid, cx: number, cy: number, size: number, dir: number, time: number, aspect: number) {

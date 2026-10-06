@@ -49,7 +49,8 @@ const myScene: SceneDef = {
 | --- | --- | --- |
 | `StarField` | Twinkling stars with a realistic magnitude spread, optional sky rotation around a pole, occlusion, and an acceptance map (e.g. to trace the Milky Way) | Meteor Shower, Ocean |
 | `Meteors` | Pooled shooting stars and fireballs with fading tails and lingering, wind-bent trains | Meteor Shower, Aurora, Starfield |
-| `Motes` | Drifting glowing particles on a noise current that flare when excited (`excite`) or emitted (`emit`), with a configurable fade | Glow Reef (plankton), Mycelium (spores) |
+| `Jelly` (`swimJelly`, `drawJelly`) | Swimming jellyfish in three species: bell, moon (four glowing rings) and comb (rainbow comb rows) | Glow Reef, Jellyfish Migration |
+| `Motes` | Drifting glowing particles on a noise current that flare when excited (`excite`) or emitted (`emit`), with a configurable fade | Glow Reef (plankton), Mycelium (spores), Jellyfish Migration (marine snow) |
 | `RainStreaks` | Thousands of slanted rain streaks, optionally lit by lightning | Storm |
 | `Lightning` | Branching ground strikes, spider lightning, in-cloud sheet flashes, a `light(x, y)` falloff for lighting clouds and ground, all with a safe envelope | Storm |
 | `lineGlyph(dx, dy, aspect)` | The `- | / \` that best follows a direction | Meteors, Lightning, Rain |
@@ -63,4 +64,6 @@ For hand-drawn animation, see `src/engine/frames.ts` and `hearth.ts`: text frame
 
 - **Precompute what doesn't move.** Event Horizon traces every cell's bent light path once per layout (about 60 ms at 1080p) into a lookup map, then shades the rotating disk through that map each tick.
 - **Avoid runaway shear.** For differentially rotating textures (accretion disks, whirlpools), crossfade two texture layers whose clocks reset while invisible; see `blackhole.ts`.
+- **Pulse-coupled synchrony.** Firefly Meadow nudges each oscillator when a neighbour fires, with a refractory window so nothing can re-fire faster than its own rhythm. Reuse it for anything that should fall into step.
+- **Precomputed static lighting.** Lava Lamps lights the room once per layout and copies it each tick; only the wax is simulated live.
 - **Signals over a network.** Mycelium runs a breadth-first search from a source cell and lights cells whose distance matches a moving front; any graph-like structure (roots, rivers, circuits) can reuse it.

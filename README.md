@@ -32,7 +32,7 @@ On first launch the console opens with a short welcome. After that, the art star
 
 ## What's in V1
 
-**16 scenes + 1 secret**, each with 2–4 parameters and a seed:
+**20 scenes + 1 secret**, each with 2–4 parameters and a seed:
 
 | Scene | Family | Rare event (~1/hour) | Audio |
 | --- | --- | --- | --- |
@@ -45,6 +45,10 @@ On first launch the console opens with a short welcome. After that, the art star
 | Meteor Shower | particle | an outburst opened by a fireball | beats launch meteors |
 | Glow Reef | scenic | a manta ray glides over, lighting up its wake | bass pulses jellyfish, beats spark plankton |
 | Mycelium | simulation | a fruiting burst: mushrooms glow and release spores | beats send pulses through the network |
+| Jellyfish Migration | particle | a giant jellyfish drifts up through the procession | bass quickens their pulse |
+| Firefly Meadow | particle | the whole meadow falls into synchronous flashing | beats set off clusters of flashes |
+| Deep-Space Nebula | procedural | a supernova: a slow swell, then an expanding light echo | — |
+| Lava Lamps | simulation | the big one: a huge blob lifts off the pool | bass turns up the heat |
 | Event Horizon | scenic | a hot spot orbits the inner disk, lensed on every pass | level brightens the disk |
 | Starfield Drift | particle | shooting star | bass sets velocity |
 | Embers | particle | the log settles: a burst of sparks | volume sets ember rate |
@@ -54,7 +58,7 @@ On first launch the console opens with a short welcome. After that, the art star
 | Hearth | hand-authored | the cat wakes up | beats pulse the flame |
 | Von Neumann *(secret)* | secret | — | — |
 
-**10 styles:** Clean Mono, Green Phosphor, Amber CRT, Paper Ink, Braille Fine, Blocks, Vapor, plus Borealis, Firelight and Midnight (used by Auto). **Auto** follows each scene's recommended look. Every style can be overridden per session: color mode (Monochrome, Duotone, Gradient, Scene Native), glyph set (classic, dense, braille, blocks), dithering (none, ordered, blue noise), palette colors, brightness, contrast, and effect strength. That is far more than the 40 distinct looks the PRD asks for.
+**11 styles:** Clean Mono, Green Phosphor, Amber CRT, Paper Ink, Braille Fine, Blocks, Vapor, plus Borealis, Firelight, Midnight and Deep Field (used by Auto). **Auto** follows each scene's recommended look. Every style can be overridden per session: color mode (Monochrome, Duotone, Gradient, Scene Native), glyph set (classic, dense, braille, blocks), dithering (none, ordered, blue noise), palette colors, brightness, contrast, and effect strength. That is far more than the 40 distinct looks the PRD asks for.
 
 **Ambient care:** playlist cycling (all scenes, favorites, or presets; sequential or shuffle with favorites weighting and no immediate repeats) with glyph-dissolve, crossfade or wipe transitions (never a hard cut); Screen Wake Lock with a visible status; slow pixel drift and brightness breathing for burn-in; optional auto-dim when idle; night mode and follow-the-clock warmth; frame caps (15/30/60/uncapped); 15 fps on battery; pauses in hidden tabs; recovers from resize, monitor/DPR changes, tab suspend and WebGL context loss (falls back to Canvas 2D if the GPU context never returns).
 

@@ -100,6 +100,12 @@ export const STYLES: StyleDef[] = [
     palette: { bg: '#02040c', fg: '#cfe0ff', duo: ['#1b2a55', '#e6f0ff'], stops: ['#060c24', '#1d3570', '#5b7fc4', '#cfe0ff', '#ffffff'] },
     post: fx({ glow: 0.45, persistence: 0.35, vignette: 0.35 }),
   },
+  {
+    id: 'deep-field', name: 'Deep Field', blurb: 'Native colors on black with soft bloom',
+    glyphSet: 'classic', colorMode: 'native', dither: 'blue', minAlpha: 0.5,
+    palette: { bg: '#000000', fg: '#f0e6ff', duo: ['#3a1040', '#9ff2ff'], stops: ['#12051c', '#7a1e4f', '#e0507a', '#5fd6c8', '#fff4e6'] },
+    post: fx({ glow: 0.55, vignette: 0.3 }),
+  },
 ];
 
 export const styleById = (id: string) => STYLES.find((s) => s.id === id) ?? STYLES[0];
