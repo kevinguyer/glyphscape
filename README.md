@@ -5,10 +5,12 @@ Living ASCII art for a spare monitor. Glyphscape runs fullscreen in the browser,
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm run build      # static site in dist/ (≈280 KB, deploy to any CDN)
+npm run build      # static site in dist/ (≈345 KB, deploy to any static host)
 npm test           # unit + scene determinism tests
 npm run new-scene -- <id> "Name"   # scaffold and register a new scene
 ```
+
+**Live site:** https://kevinguyer.github.io/glyphscape/ is rebuilt and published by [`.github/workflows/pages.yml`](.github/workflows/pages.yml) on every push to `main` (tests must pass first). It needs HTTPS for the microphone, wake lock, and offline install, which Pages provides.
 
 ## Using it
 
