@@ -302,3 +302,80 @@ export function monoEl<K extends keyof HTMLElementTagNameMap>(tag: K, cls: strin
   setMono(e, text);
   return e;
 }
+
+export interface GridItem {
+  id: string;
+  label: string;
+}
+
+export interface OptionGridOpts {
+  items: GridItem[];
+  columns: number;
+  isActive(id: string): boolean;
+  /** Extra marker after the label (e.g. a favorite star). */
+  badge?(id: string): string;
+  select(id: string): void;
+  /** Called when an option is focused or hovered (e.g. to preview it). */
+  preview?(id: string): void;
+  key?(id: string, e: KeyboardEvent): boolean;
+}
+
+/**
+ * Every option visible at once, laid out in columns. Arrows move within the grid (up and down
+ * move by a whole row), Enter or click selects, and focus or hover can preview.
+ */
+export function optionGrid(o: OptionGridOpts): Row[] {
+  const wrap = h('div', 'opt-grid');
+  wrap.style.setProperty('--cols', String(o.columns));
+  wrap.setAttribute('role', 'listbox');
+  const els: HTMLElement[] = [];
+  const rows = o.items.map((it, i) => {
+    const el = h('div', 'opt');
+    el.tabIndex = 0;
+    el.setAttribute('role', 'option');
+    el.dataset.id = it.id;
+    el.dataset.label = it.label.toLowerCase();
+    wrap.append(el);
+    els.push(el);
+    el.addEventListener('click', () => o.select(it.id));
+    el.addEventListener('focus', () => o.preview?.(it.id));
+    el.addEventListener('pointerenter', () => o.preview?.(it.id));
+    const row: Row = {
+      el,
+      mount: i === 0 ? wrap : null,
+      focusable: true,
+      update() {
+        const active = o.isActive(it.id);
+        setMono(el, `${active ? '▸' : ' '} ${it.label}${o.badge ? o.badge(it.id) : ''}`);
+        el.classList.toggle('active', active);
+        el.setAttribute('aria-selected', String(active));
+      },
+      activate: () => o.select(it.id),
+      key(e) {
+        if (o.key?.(it.id, e)) return true;
+        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return false;
+        // move by a full row among the visible options; fall out of the grid at its edges
+        const visible = els.filter((x) => !x.hidden);
+        const k = visible.indexOf(el) + (e.key === 'ArrowDown' ? o.columns : -o.columns);
+        if (k < 0 || k >= visible.length) return false;
+        visible[k].focus();
+        visible[k].scrollIntoView({ block: 'nearest' });
+        return true;
+      },
+    };
+    return row;
+  });
+  return rows;
+}
+
+/** Show only the options whose label contains `q`. Returns how many remain. */
+export function filterGrid(rows: Row[], q: string) {
+  const needle = q.trim().toLowerCase();
+  let n = 0;
+  for (const r of rows) {
+    const hit = !needle || (r.el.dataset.label ?? '').includes(needle);
+    r.el.hidden = !hit;
+    if (hit) n++;
+  }
+  return n;
+}

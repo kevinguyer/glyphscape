@@ -5,6 +5,7 @@ import embers from './embers';
 import fireflies from './fireflies';
 import flowfield from './flowfield';
 import hearth from './hearth';
+import kaleidoscope from './kaleidoscope';
 import lavalamp from './lavalamp';
 import life from './life';
 import meteors from './meteors';
@@ -13,17 +14,19 @@ import mycelium from './mycelium';
 import nebula from './nebula';
 import nightcity from './nightcity';
 import ocean from './ocean';
+import orrery from './orrery';
 import plasma from './plasma';
 import probe from './probe';
 import rain from './rain';
 import reef from './reef';
 import starfield from './starfield';
 import storm from './storm';
+import sunrays from './sunrays';
 import tokamak from './tokamak';
 
 /** Scene manifest: every scene registers here, and the console lists them automatically. */
 export const SCENES: SceneDef[] = [
-  aurora, flowfield, plasma, rain, storm, ocean, reef, migration, starfield, meteors, nebula, embers, fireflies, life, mycelium, tokamak, blackhole, nightcity, hearth, lavalamp, probe,
+  aurora, flowfield, plasma, kaleidoscope, rain, storm, ocean, reef, sunrays, migration, starfield, meteors, nebula, embers, fireflies, life, mycelium, tokamak, orrery, blackhole, nightcity, hearth, lavalamp, probe,
 ];
 
 export const sceneById = (id: string) => SCENES.find((s) => s.id === id);

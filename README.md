@@ -26,13 +26,15 @@ On first launch the console opens with a short welcome. After that, the art star
 | `/` or `:` | Hidden terminal prompt |
 | ↑↑↓↓←→←→BA | You'll see |
 
+**Picking a scene:** the Scene panel shows one large live preview above a list of every scene. Arrow keys or the mouse preview a scene as you browse; Enter or a click plays it. Type in **Find** to filter the list, and press `*` to favorite. The Style panel lists every style at once; the palette editor is folded away under **Palette editor ▸**.
+
 **In the console:** `Tab` / `Shift+Tab` switch panels, `↑↓` move, `←→` adjust (hold `Shift` for big steps), `Enter` activates, `*` favorites a scene, `Del` deletes a preset, `R` renames one. Everything applies live and saves to `localStorage`. The console fades out after 10 s of inactivity (configurable).
 
 **Terminal commands** (type `help`): `scene aurora`, `style amber`, `seed 8213`, `reroll`, `param speed 0.5`, `cell 12`, `color native`, `glyphs braille`, `dither blue`, `bright 0.8`, `contrast 1.4`, `cycle off`, `interval 15`, `transition wipe 6`, `preset save Late night`, `preset load 2`, `audio mic`, `night on`, `fps 30`, `postcard`, `photo png|txt`, `clock` (ghost clock now), `event` (rare event now), `list scenes`, `stats` (perf/heap HUD for soak tests).
 
 ## What's in V1
 
-**20 scenes + 1 secret**, each with 2–4 parameters and a seed:
+**23 scenes + 1 secret**, each with 2–4 parameters and a seed:
 
 | Scene | Family | Rare event (~1/hour) | Audio |
 | --- | --- | --- | --- |
@@ -49,6 +51,9 @@ On first launch the console opens with a short welcome. After that, the art star
 | Firefly Meadow | particle | the whole meadow falls into synchronous flashing | beats set off clusters of flashes |
 | Deep-Space Nebula | procedural | a supernova: a slow swell, then an expanding light echo | — |
 | Lava Lamps | simulation | the big one: a huge blob lifts off the pool | bass turns up the heat |
+| Stained Glass | procedural | the turn: every piece tumbles into a new pattern | beats nudge the rotation |
+| Clockwork Universe | scenic | a comet swings through, tail pointing away from the sun | bass brightens the sun |
+| Underwater Sunrays | scenic | a sea turtle glides across the light | bass makes the shafts shimmer |
 | Event Horizon | scenic | a hot spot orbits the inner disk, lensed on every pass | level brightens the disk |
 | Starfield Drift | particle | shooting star | bass sets velocity |
 | Embers | particle | the log settles: a burst of sparks | volume sets ember rate |

@@ -7,8 +7,8 @@ import { COLOR_MODES, styleById } from '../engine/styles';
 import type { Playlist } from '../playlist';
 import { sceneById } from '../scenes';
 import { defaultSettings, type Preset } from '../settings';
-import { bar, button, buttons, choice, colorRow, h, heading, info, monoEl, setMono, slider, toggle, type Row } from './controls';
-import { Thumbnails } from './thumbs';
+import { bar, button, buttons, choice, colorRow, filterGrid, h, heading, info, monoEl, optionGrid, setMono, slider, toggle, type Row } from './controls';
+import { LARGE_THUMB, Thumbnails } from './thumbs';
 
 export const CONSOLE_W = 66; // characters, including the frame
 
@@ -52,12 +52,14 @@ export class Console {
   private rows: Row[] = [];
   private liveTimer = 0;
   private hideTimer = 0;
-  private thumbs: Thumbnails;
+  private preview: Thumbnails;
+  private previewId: string | null = null;
+  private paletteOpen = false;
   private capturingKey = false;
   private confirmDelete = -1;
 
   constructor(private app: App, private ambient: Ambient, private playlist: Playlist, private openTerminal: () => void) {
-    this.thumbs = new Thumbnails(app.engine);
+    this.preview = new Thumbnails(app.engine, LARGE_THUMB);
     this.root = h('div', 'console');
     this.root.setAttribute('role', 'dialog');
     this.root.setAttribute('aria-label', 'Glyphscape console');
@@ -132,7 +134,7 @@ export class Console {
     this.root.classList.remove('open');
     clearInterval(this.liveTimer);
     clearTimeout(this.hideTimer);
-    this.thumbs.stop();
+    this.preview.stop();
     this.capturingKey = false;
     if (!this.app.s.firstRunDone) this.app.store.update((s) => (s.firstRunDone = true));
     if (this.root.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
@@ -177,12 +179,12 @@ export class Console {
     this.body.textContent = '';
     this.rows = this.panels[this.active].build();
     for (const r of this.rows) {
-      if (r.mount === null) continue;
-      this.body.append(r.mount ?? r.el);
+      // rows with a null mount live inside another row's container, but still need updating
+      if (r.mount !== null) this.body.append(r.mount ?? r.el);
       r.update();
     }
-    if (this.panels[this.active].id === 'scene') this.thumbs.start();
-    else this.thumbs.stop();
+    if (this.panels[this.active].id === 'scene') this.preview.start();
+    else this.preview.stop();
     this.refreshHeader();
     if (focusedIdx >= 0) this.focusRow(focusedIdx);
   }
@@ -211,7 +213,7 @@ export class Console {
   }
 
   private focusables(): HTMLElement[] {
-    return this.rows.filter((r) => r.focusable).map((r) => r.el);
+    return this.rows.filter((r) => r.focusable && !r.el.hidden).map((r) => r.el);
   }
 
   private focusRow(i: number) {
@@ -287,58 +289,96 @@ export class Console {
   private scenePanel(): Row[] {
     const app = this.app;
     const rows: Row[] = [];
-    const grid = h('div', 'scene-grid');
-    rows.push({ el: grid, focusable: false, update() {} });
-    for (const def of app.scenes()) {
-      const card = h('div', 'card');
-      card.tabIndex = 0;
-      card.setAttribute('role', 'button');
-      card.setAttribute('aria-label', `${def.name}: ${def.blurb}`);
-      const name = h('div', 'card-name');
-      card.append(this.thumbs.canvasFor(def), name);
-      grid.append(card);
-      const select = () => app.setScene(def.id);
-      const fav = () =>
-        app.store.update((s) => {
-          const f = s.playlist.favorites;
-          const i = f.indexOf(def.id);
-          if (i >= 0) f.splice(i, 1);
-          else f.push(def.id);
-        });
-      card.addEventListener('click', (ev) => {
-        if ((ev.target as HTMLElement).classList.contains('star')) fav();
-        else select();
+    const isFav = (id: string) => app.s.playlist.favorites.includes(id);
+    const toggleFav = (id: string) =>
+      app.store.update((s) => {
+        const f = s.playlist.favorites;
+        const i = f.indexOf(id);
+        if (i >= 0) f.splice(i, 1);
+        else f.push(id);
       });
-      rows.push({
-        el: card,
-        mount: null,
-        focusable: true,
-        update() {
-          const isFav = app.s.playlist.favorites.includes(def.id);
-          const active = app.engine.activeDef.id === def.id;
-          name.innerHTML = '';
-          name.append(monoEl('span', '', `${active ? '▸' : ' '} ${def.name}`), monoEl('span', 'star', isFav ? ' ★' : ' ☆'));
-          card.classList.toggle('active', active);
-        },
-        activate: select,
-        key(e) {
-          if (e.key === '*' || e.key === 's') {
-            fav();
-            return true;
-          }
-          return false;
-        },
-      });
-    }
-    rows.push(info(() => {
-      const d = app.engine.activeDef;
-      return `${d.name} · ${d.family} · ${d.blurb}`;
-    }, 'info dim'));
+
+    // Filter: type to narrow the list. Down moves into the list, Enter picks the first match.
+    const filterRow = h('div', 'row filter');
+    const input = h('input', 'filter-input');
+    input.placeholder = 'type to filter scenes…';
+    input.setAttribute('aria-label', 'Filter scenes');
+    input.spellcheck = false;
+    filterRow.append(h('span', 'label', 'Find'.padEnd(15)), input);
+    rows.push({ el: input, mount: filterRow, focusable: true, update() {} });
+
+    // One large live preview of whichever scene is focused or hovered.
+    const preview = h('div', 'preview');
+    const caption = h('div', 'preview-caption');
+    const blurb = h('div', 'preview-blurb');
+    preview.append(h('div', 'preview-frame'), caption, blurb);
+    let shown = this.previewId ?? app.engine.activeDef.id;
+    const show = (id: string) => {
+      const def = sceneById(id);
+      if (!def) return;
+      shown = id;
+      this.previewId = id;
+      preview.firstElementChild!.replaceChildren(this.preview.canvasFor(def));
+      const active = app.engine.activeDef.id === id;
+      setMono(caption, `${def.name}${isFav(id) ? ' ★' : ''}${active ? '   ▸ playing' : '   ⏎ to play'}`);
+      blurb.textContent = `${def.family} · ${def.blurb}`;
+    };
+    rows.push({ el: preview, focusable: false, update: () => show(shown) });
+
+    const defs = app.scenes();
+    const grid = optionGrid({
+      items: defs.map((d) => ({ id: d.id, label: d.name })),
+      columns: 3,
+      isActive: (id) => app.engine.activeDef.id === id,
+      badge: (id) => (isFav(id) ? ' ★' : ''),
+      select: (id) => {
+        app.setScene(id);
+        show(id);
+      },
+      preview: show,
+      key: (id, e) => {
+        if (e.key === '*' || e.key === 's') {
+          toggleFav(id);
+          return true;
+        }
+        return false;
+      },
+    });
+    rows.push(...grid);
+
+    const firstVisible = () => grid.find((r) => !r.el.hidden);
+    input.addEventListener('input', () => {
+      filterGrid(grid, input.value);
+      const f = firstVisible();
+      if (f) show(f.el.dataset.id!);
+    });
+    input.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        firstVisible()?.el.focus();
+      } else if (e.key === 'Enter') {
+        const f = firstVisible();
+        if (f) app.setScene(f.el.dataset.id!);
+      } else if (e.key === 'Escape') {
+        if (input.value) {
+          input.value = '';
+          filterGrid(grid, '');
+        } else {
+          this.close();
+        }
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        this.showPanel(this.active + (e.shiftKey ? -1 : 1));
+      }
+    });
+
     rows.push(...buttons([
       { label: 'Shuffle', action: () => app.shuffleScene() },
+      { label: '★ Favorite', action: () => { toggleFav(shown); show(shown); } },
       { label: 'Rare event now', action: () => app.engine.triggerEvent() },
     ]));
-    rows.push(info(() => 'Enter selects · * favorites · favorites weight the playlist shuffle', 'info dim'));
+    rows.push(info(() => '↑↓←→ browse (previews live) · ⏎ play · * favorite · type in Find to filter', 'info dim'));
     return rows;
   }
 
@@ -365,17 +405,20 @@ export class Console {
         duo[i] = hex;
         x.palette = { ...(x.palette ?? {}), duo };
       }));
+    // Every style visible at once; picking one applies it immediately.
+    const styleGrid = optionGrid({
+      items: STYLE_CYCLE.map((id) => ({ id, label: id === 'auto' ? 'Auto' : styleById(id).name })),
+      columns: 3,
+      isActive: (id) => s().style === id,
+      select: (id) => app.setStyle(id),
+    });
     const rows: Row[] = [
-      choice({
-        label: 'Style',
-        options: () => STYLE_CYCLE.map((id) => ({
-          id,
-          label: id === 'auto' ? `Auto (${styleById(app.engine.activeDef.recommended.style).name})` : styleById(id).name,
-        })),
-        get: () => s().style,
-        set: (v) => app.setStyle(v),
-      }),
-      info(() => (s().style === 'auto' ? 'Auto uses each scene\'s recommended look' : styleById(s().style).blurb), 'info dim'),
+      heading('style'),
+      ...styleGrid,
+      info(() => (s().style === 'auto'
+        ? `Auto: ${styleById(app.engine.activeDef.recommended.style).name} for ${app.engine.activeDef.name}, each scene's recommended look`
+        : styleById(s().style).blurb), 'info dim'),
+      heading('adjust'),
       choice({
         label: 'Color mode',
         options: [{ id: 'style', label: 'Style default' }, ...COLOR_MODES.map((m) => ({ id: m.id, label: m.name }))],
@@ -398,14 +441,22 @@ export class Console {
       slider({ label: 'Contrast', min: 0.5, max: 2.5, step: 0.01, get: () => s().contrast, set: (v) => upd((x) => (x.contrast = v)) }),
       slider({ label: 'Effects', min: 0, max: 1.5, step: 0.01, get: () => s().effects, set: (v) => upd((x) => (x.effects = v)) }),
       toggle('Scene glyphs', () => s().sceneGlyphs, (v) => upd((x) => (x.sceneGlyphs = v))),
-      heading('palette'),
-      palette('fg'),
-      palette('bg'),
-      duoRow(0),
-      duoRow(1),
-      ...[0, 1, 2, 3].map(stopRow),
-      button('Reset palette', () => upd((x) => (x.palette = null)), s().palette ? 'custom palette active' : ''),
+      // The palette editor is long, so it stays folded away until asked for.
+      button(this.paletteOpen ? 'Palette editor ▾' : 'Palette editor ▸', () => {
+        this.paletteOpen = !this.paletteOpen;
+        this.rebuild();
+      }, s().palette ? 'custom palette active' : ''),
     ];
+    if (this.paletteOpen) {
+      rows.push(
+        palette('fg'),
+        palette('bg'),
+        duoRow(0),
+        duoRow(1),
+        ...[0, 1, 2, 3].map(stopRow),
+        button('Reset palette', () => upd((x) => (x.palette = null))),
+      );
+    }
     return rows;
   }
 

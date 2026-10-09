@@ -403,3 +403,86 @@ canvas.stage {
   text-align: center;
   overflow: visible;
 }
+
+/* ------------------------------------------------------------------ option grids & scene picker */
+
+.console .opt-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  column-gap: 1ch;
+  margin: 0.2em 0 0.3em;
+}
+
+.console .opt {
+  outline: none;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--dim);
+}
+
+.console .opt:hover {
+  color: var(--fg);
+  background: color-mix(in srgb, var(--fg) 9%, transparent);
+}
+
+.console .opt:focus {
+  color: var(--fg);
+  background: color-mix(in srgb, var(--fg) 18%, transparent);
+  box-shadow: inset 2px 0 0 var(--fg);
+}
+
+.console .opt.active {
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.console .preview {
+  margin: 0.4em 0 0.3em;
+}
+
+.console .preview-frame canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 532 / 228;
+  border: 1px solid var(--dim);
+}
+
+.console .preview-caption {
+  margin-top: 0.3em;
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.console .preview-blurb {
+  color: var(--dim);
+  white-space: normal;
+  /* fixed height so the list below never shifts under the pointer */
+  height: 2.76em;
+  overflow: hidden;
+}
+
+.console .filter {
+  display: flex;
+  align-items: baseline;
+}
+
+.console .filter-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: var(--fg);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dashed var(--dim);
+  outline: none;
+  padding: 0;
+}
+
+.console .filter-input::placeholder {
+  color: var(--dim);
+}
+
+.console .filter-input:focus {
+  border-bottom-color: var(--fg);
+}
